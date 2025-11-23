@@ -142,19 +142,21 @@ function extractFromIframe(username) {
             try {
                 const doc = iframe.contentDocument;
                 if (doc && doc.readyState === 'complete') {
-                    const basedIn = findValue(doc, "Account based in");
-                    const connectedVia = findValue(doc, "Connected via");
+                    const basedInData = findValueWithIcon(doc, "Account based in");
+                    const connectedViaData = findValueWithIcon(doc, "Connected via");
 
                     // If we found data OR we reached max attempts
-                    if (basedIn || connectedVia || attempts >= maxAttempts) {
+                    if (basedInData.text || connectedViaData.text || attempts >= maxAttempts) {
                         clearInterval(interval);
                         document.body.removeChild(iframe);
 
-                        console.log(`[RegionViewer] Finished ${username}. Found:`, { basedIn, connectedVia });
+                        console.log(`[RegionViewer] Finished ${username}. Found:`, { basedInData, connectedViaData });
 
                         resolve({
-                            basedIn: basedIn || "Unknown",
-                            connectedVia: connectedVia || "Unknown"
+                            basedIn: basedInData.text || "Unknown",
+                            basedInHasIcon: basedInData.hasValidIcon,
+                            connectedVia: connectedViaData.text || "Unknown",
+                            connectedViaHasIcon: connectedViaData.hasValidIcon
                         });
                     }
                 }
@@ -169,22 +171,46 @@ function extractFromIframe(username) {
     });
 }
 
-function findValue(doc, labelText) {
+function findValueWithIcon(doc, labelText) {
     const spans = doc.querySelectorAll('span');
     for (const span of spans) {
         if (span.textContent.trim() === labelText) {
-            // Navigate up to the container div
             const labelDiv = span.closest('div[dir="ltr"]');
             if (labelDiv) {
-                // The value is in the next sibling div
                 const valueDiv = labelDiv.nextElementSibling;
                 if (valueDiv) {
-                    return valueDiv.textContent.trim();
+                    const text = valueDiv.textContent.trim();
+
+                    let hasValidIcon = false;
+                    const parent = labelDiv.parentElement;
+                    if (parent) {
+                        const grandparent = parent.parentElement;
+                        if (grandparent) {
+                            // Check direct children of grandparent for the icon SVG
+                            for (const child of grandparent.children) {
+                                if (child.tagName.toLowerCase() === 'svg' && child !== parent) {
+                                    // Check if this is the ignored SVG (Info icon)
+                                    const path = child.querySelector('path');
+                                    const d = path ? path.getAttribute('d') : "";
+
+                                    // The ignored path from user request
+                                    const ignoredPath = "M13.5 8.5c0 .83-.67 1.5-1.5 1.5s-1.5-.67-1.5-1.5S11.17 7 12 7s1.5.67 1.5 1.5zM13 17v-5h-2v5h2zm-1 5.25c5.66 0 10.25-4.59 10.25-10.25S17.66 1.75 12 1.75 1.75 6.34 1.75 12 6.34 22.25 12 22.25zM20.25 12c0 4.56-3.69 8.25-8.25 8.25S3.75 16.56 3.75 12 7.44 3.75 12 3.75s8.25 3.69 8.25 8.25z";
+
+                                    if (d !== ignoredPath) {
+                                        hasValidIcon = true;
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    return { text, hasValidIcon };
                 }
             }
         }
     }
-    return null;
+    return { text: null, hasValidIcon: false };
 }
 
 function addTextToTweets() {
@@ -212,20 +238,27 @@ function addTextToTweets() {
         const basedInDisplay = formatWithFlag(data.basedIn);
         const connectedViaDisplay = formatWithFlag(data.connectedVia);
 
+        // Clear loading text
+        span.textContent = "";
+
         // Only show if we have data
-        let text = "";
         if (data.basedIn && data.basedIn !== "Unknown" && data.basedIn !== "Error") {
-            text += ` | 📍 ${basedInDisplay}`;
+            const textNode = document.createTextNode(` | 📍 ${basedInDisplay}`);
+            span.appendChild(textNode);
+
+            if (data.basedInHasIcon) {
+                const iconNode = document.createTextNode(" 🟢");
+                span.appendChild(iconNode);
+            }
         }
         if (data.connectedVia && data.connectedVia !== "Unknown" && data.connectedVia !== "Error") {
-            text += ` | 🔗 ${connectedViaDisplay}`;
+            const textNode = document.createTextNode(` | 🔗 ${connectedViaDisplay}`);
+            span.appendChild(textNode);
         }
 
-        if (text === "") {
-            text = " | ❓"; // No data found
+        if (span.innerHTML === "") {
+            span.textContent = " | ❓"; // No data found
         }
-
-        span.textContent = text;
     });
 }
 
