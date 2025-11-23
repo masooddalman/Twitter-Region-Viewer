@@ -1,10 +1,17 @@
 {
-  "name": "Hello Extensions",
-  "description": "Base Level Extension",
+  "name": "Twitter Region Viewer",
+  "description": "View Twitter region data.",
   "version": "1.0",
   "manifest_version": 3,
-  "action": {
-    "default_popup": "hello.html",
-    "default_icon": "hello_extensions.png"
-  }
+  "content_scripts": [
+    {
+      "matches": [
+        "https://twitter.com/*",
+        "https://x.com/*"
+      ],
+      "js": [
+        "content.js"
+      ]
+    }
+  ]
 }
