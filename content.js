@@ -2,6 +2,74 @@ const userCache = new Map();
 const queue = [];
 let isProcessing = false;
 
+const countryToFlag = {
+    "United States": "🇺🇸",
+    "United Kingdom": "🇬🇧",
+    "Canada": "🇨🇦",
+    "Australia": "🇦🇺",
+    "Germany": "🇩🇪",
+    "France": "🇫🇷",
+    "Japan": "🇯🇵",
+    "China": "🇨🇳",
+    "India": "🇮🇳",
+    "Brazil": "🇧🇷",
+    "Russia": "🇷🇺",
+    "Italy": "🇮🇹",
+    "Spain": "🇪🇸",
+    "Mexico": "🇲🇽",
+    "South Korea": "🇰🇷",
+    "Indonesia": "🇮🇩",
+    "Turkey": "🇹🇷",
+    "Netherlands": "🇳🇱",
+    "Saudi Arabia": "🇸🇦",
+    "Switzerland": "🇨🇭",
+    "Sweden": "🇸🇪",
+    "Poland": "🇵🇱",
+    "Belgium": "🇧🇪",
+    "Argentina": "🇦🇷",
+    "Norway": "🇳🇴",
+    "Austria": "🇦🇹",
+    "Iran": "🇮🇷",
+    "United Arab Emirates": "🇦🇪",
+    "Israel": "🇮🇱",
+    "South Africa": "🇿🇦",
+    "Ukraine": "🇺🇦",
+    "Egypt": "🇪🇬",
+    "Pakistan": "🇵🇰",
+    "Malaysia": "🇲🇾",
+    "Philippines": "🇵🇭",
+    "Vietnam": "🇻🇳",
+    "Thailand": "🇹🇭",
+    "Ireland": "🇮🇪",
+    "Portugal": "🇵🇹",
+    "Greece": "🇬🇷",
+    "Denmark": "🇩🇰",
+    "Finland": "🇫🇮",
+    "New Zealand": "🇳🇿",
+    "Singapore": "🇸🇬",
+    "Czech Republic": "🇨🇿",
+    "Hungary": "🇭🇺",
+    "Romania": "🇷🇴",
+    "Chile": "🇨🇱",
+    "Colombia": "🇨🇴",
+    "Peru": "🇵🇪",
+    "Venezuela": "🇻🇪"
+};
+
+function formatWithFlag(text) {
+    if (!text) return "";
+    let result = text;
+    // Sort by length descending to ensure longer matches are replaced first (e.g. "South Africa" before "Africa")
+    const entries = Object.entries(countryToFlag).sort((a, b) => b[0].length - a[0].length);
+
+    for (const [country, flag] of entries) {
+        if (result.includes(country)) {
+            result = result.replace(country, flag);
+        }
+    }
+    return result;
+}
+
 function getUsername(userNameElement) {
     // Find the first anchor tag that links to a profile (not a status)
     const anchors = userNameElement.querySelectorAll('a');
@@ -105,10 +173,6 @@ function findValue(doc, labelText) {
     const spans = doc.querySelectorAll('span');
     for (const span of spans) {
         if (span.textContent.trim() === labelText) {
-            // Based on user snippet:
-            // <div ...><span ...>Label</span></div>
-            // <div ...><span ...>Value</span></div>
-
             // Navigate up to the container div
             const labelDiv = span.closest('div[dir="ltr"]');
             if (labelDiv) {
@@ -145,7 +209,23 @@ function addTextToTweets() {
 
         const data = await fetchUserRegionData(username);
 
-        span.textContent = ` | 📍 ${data.basedIn} | 🔗 ${data.connectedVia}`;
+        const basedInDisplay = formatWithFlag(data.basedIn);
+        const connectedViaDisplay = formatWithFlag(data.connectedVia);
+
+        // Only show if we have data
+        let text = "";
+        if (data.basedIn && data.basedIn !== "Unknown" && data.basedIn !== "Error") {
+            text += ` | 📍 ${basedInDisplay}`;
+        }
+        if (data.connectedVia && data.connectedVia !== "Unknown" && data.connectedVia !== "Error") {
+            text += ` | 🔗 ${connectedViaDisplay}`;
+        }
+
+        if (text === "") {
+            text = " | ❓"; // No data found
+        }
+
+        span.textContent = text;
     });
 }
 
