@@ -2,11 +2,13 @@
 
 A Chrome extension that reveals the "Account based in" and "Connected via" information for Twitter/X users directly on their posts.
 
-### Before
+**[فارسی (Persian)](README_FA.md)**
+
+## Before
 
 ![Before](screens/before.jpg)
 
-### After
+## After
 
 ![After](screens/after.jpg)
 

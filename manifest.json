@@ -1,6 +1,6 @@
 {
   "name": "Twitter Region Viewer",
-  "description": "View Twitter region data.",
+  "description": "Displays 'Account based in' and 'Connected via' information next to usernames on X (Twitter) posts.",
   "version": "1.0",
   "manifest_version": 3,
   "permissions": [
