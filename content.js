@@ -1,4 +1,16 @@
-const userCache = new Map();
+const storageCache = {
+    get: async (username) => {
+        return new Promise((resolve) => {
+            chrome.storage.local.get([username], (result) => {
+                resolve(result[username]);
+            });
+        });
+    },
+    set: (username, data) => {
+        chrome.storage.local.set({ [username]: data });
+    }
+};
+
 const queue = [];
 let isProcessing = false;
 
@@ -99,13 +111,14 @@ function getUsername(userNameElement) {
 }
 
 function fetchUserRegionData(username) {
-    if (userCache.has(username)) {
-        return Promise.resolve(userCache.get(username));
-    }
+    // Check persistent cache first
+    return storageCache.get(username).then(cached => {
+        if (cached) return cached;
 
-    return new Promise((resolve) => {
-        queue.push({ username, resolve });
-        processQueue();
+        return new Promise((resolve) => {
+            queue.push({ username, resolve });
+            processQueue();
+        });
     });
 }
 
@@ -118,17 +131,18 @@ async function processQueue() {
 
     try {
         const data = await extractFromIframe(username);
-        userCache.set(username, data);
+        storageCache.set(username, data); // Save to persistent cache
         resolve(data);
     } catch (e) {
         console.error(`[RegionViewer] Error processing ${username}`, e);
         resolve({ basedIn: "Error", connectedVia: "Error" });
     }
 
+    // Increased delay to 3 seconds to be safer
     setTimeout(() => {
         isProcessing = false;
         processQueue();
-    }, 1500);
+    }, 3000);
 }
 
 function extractFromIframe(username) {
@@ -228,39 +242,67 @@ function addTextToTweets() {
         const username = getUsername(userName);
         if (!username) return;
 
-        const span = document.createElement('span');
-        span.style.marginLeft = "5px";
-        span.style.fontSize = "small";
-        span.style.color = "#536471";
-        span.textContent = " ⏳";
+        // Create a container for our extension's UI
+        const container = document.createElement('span');
+        container.style.marginLeft = "5px";
+        container.style.fontSize = "small";
+        container.style.color = "#536471";
 
-        userName.appendChild(span);
+        // Create the "Load" button
+        const loadBtn = document.createElement('span');
+        loadBtn.textContent = " 🌍";
+        loadBtn.style.cursor = "pointer";
+        loadBtn.style.opacity = "0.7";
+        loadBtn.title = "Click to load region info";
+        loadBtn.onclick = async (e) => {
+            e.stopPropagation(); // Prevent clicking the tweet
+            e.preventDefault();
 
-        const data = await fetchUserRegionData(username);
+            loadBtn.textContent = " ⏳";
+            loadBtn.style.cursor = "default";
 
-        const basedInDisplay = formatWithFlag(data.basedIn);
-        const connectedViaDisplay = formatPlatform(data.connectedVia);
+            const data = await fetchUserRegionData(username);
 
-        span.textContent = "";
+            // Remove the button
+            loadBtn.remove();
 
-        if (data.basedIn && data.basedIn !== "Unknown" && data.basedIn !== "Error") {
-            const textNode = document.createTextNode(` | 📍 ${basedInDisplay}`);
-            span.appendChild(textNode);
+            // Render data
+            renderData(container, data);
+        };
 
-            if (data.basedInHasIcon) {
-                const iconNode = document.createTextNode(" 🟢");
-                span.appendChild(iconNode);
-            }
-        }
-        if (data.connectedVia && data.connectedVia !== "Unknown" && data.connectedVia !== "Error") {
-            const textNode = document.createTextNode(` | 🔗 ${connectedViaDisplay}`);
-            span.appendChild(textNode);
-        }
+        container.appendChild(loadBtn);
+        userName.appendChild(container);
 
-        if (span.innerHTML === "") {
-            span.textContent = " | ❓";
+        // Check if we already have it in cache, if so, load immediately (no cost)
+        const cached = await storageCache.get(username);
+        if (cached) {
+            loadBtn.remove();
+            renderData(container, cached);
         }
     });
+}
+
+function renderData(container, data) {
+    const basedInDisplay = formatWithFlag(data.basedIn);
+    const connectedViaDisplay = formatPlatform(data.connectedVia);
+
+    if (data.basedIn && data.basedIn !== "Unknown" && data.basedIn !== "Error") {
+        const textNode = document.createTextNode(` | 📍 ${basedInDisplay}`);
+        container.appendChild(textNode);
+
+        if (data.basedInHasIcon) {
+            const iconNode = document.createTextNode(" 🟢");
+            container.appendChild(iconNode);
+        }
+    }
+    if (data.connectedVia && data.connectedVia !== "Unknown" && data.connectedVia !== "Error") {
+        const textNode = document.createTextNode(` | 🔗 ${connectedViaDisplay}`);
+        container.appendChild(textNode);
+    }
+
+    if (container.innerHTML === "") {
+        container.textContent = " | ❓";
+    }
 }
 
 addTextToTweets();
