@@ -56,10 +56,27 @@ const countryToFlag = {
     "Venezuela": "🇻🇪"
 };
 
+const platformToEmoji = {
+    "Android App": "🤖",
+    "App Store": "🍎",
+    "Web": "🌐"
+};
+
+function formatPlatform(text) {
+    if (!text) return "";
+    let result = formatWithFlag(text);
+    for (const [platform, emoji] of Object.entries(platformToEmoji)) {
+        if (result.includes(platform)) {
+            result = result.replace(platform, emoji);
+        }
+    }
+    return result;
+}
+
 function formatWithFlag(text) {
     if (!text) return "";
     let result = text;
-    // Sort by length descending to ensure longer matches are replaced first (e.g. "South Africa" before "Africa")
+    // Sort by length descending to ensure longer matches are replaced first
     const entries = Object.entries(countryToFlag).sort((a, b) => b[0].length - a[0].length);
 
     for (const [country, flag] of entries) {
@@ -71,12 +88,10 @@ function formatWithFlag(text) {
 }
 
 function getUsername(userNameElement) {
-    // Find the first anchor tag that links to a profile (not a status)
     const anchors = userNameElement.querySelectorAll('a');
     for (const anchor of anchors) {
         const href = anchor.getAttribute('href');
         if (href && href.startsWith('/') && !href.includes('/status/')) {
-            // Remove leading slash to get username
             return href.substring(1);
         }
     }
@@ -110,7 +125,6 @@ async function processQueue() {
         resolve({ basedIn: "Error", connectedVia: "Error" });
     }
 
-    // Delay between requests to avoid rate limiting and UI lag
     setTimeout(() => {
         isProcessing = false;
         processQueue();
@@ -120,7 +134,6 @@ async function processQueue() {
 function extractFromIframe(username) {
     return new Promise((resolve) => {
         const iframe = document.createElement('iframe');
-        // Position off-screen but keep visible to ensuring rendering
         iframe.style.position = 'fixed';
         iframe.style.top = '0';
         iframe.style.left = '0';
@@ -134,7 +147,6 @@ function extractFromIframe(username) {
         document.body.appendChild(iframe);
 
         let attempts = 0;
-        // Wait up to 10 seconds (20 * 500ms)
         const maxAttempts = 20;
 
         const interval = setInterval(() => {
@@ -145,7 +157,6 @@ function extractFromIframe(username) {
                     const basedInData = findValueWithIcon(doc, "Account based in");
                     const connectedViaData = findValueWithIcon(doc, "Connected via");
 
-                    // If we found data OR we reached max attempts
                     if (basedInData.text || connectedViaData.text || attempts >= maxAttempts) {
                         clearInterval(interval);
                         document.body.removeChild(iframe);
@@ -161,7 +172,6 @@ function extractFromIframe(username) {
                     }
                 }
             } catch (err) {
-                // Cross-origin errors shouldn't happen on same domain, but just in case
                 console.error("[RegionViewer] Iframe access error", err);
                 clearInterval(interval);
                 if (iframe.parentNode) document.body.removeChild(iframe);
@@ -186,14 +196,10 @@ function findValueWithIcon(doc, labelText) {
                     if (parent) {
                         const grandparent = parent.parentElement;
                         if (grandparent) {
-                            // Check direct children of grandparent for the icon SVG
                             for (const child of grandparent.children) {
                                 if (child.tagName.toLowerCase() === 'svg' && child !== parent) {
-                                    // Check if this is the ignored SVG (Info icon)
                                     const path = child.querySelector('path');
                                     const d = path ? path.getAttribute('d') : "";
-
-                                    // The ignored path from user request
                                     const ignoredPath = "M13.5 8.5c0 .83-.67 1.5-1.5 1.5s-1.5-.67-1.5-1.5S11.17 7 12 7s1.5.67 1.5 1.5zM13 17v-5h-2v5h2zm-1 5.25c5.66 0 10.25-4.59 10.25-10.25S17.66 1.75 12 1.75 1.75 6.34 1.75 12 6.34 22.25 12 22.25zM20.25 12c0 4.56-3.69 8.25-8.25 8.25S3.75 16.56 3.75 12 7.44 3.75 12 3.75s8.25 3.69 8.25 8.25z";
 
                                     if (d !== ignoredPath) {
@@ -204,7 +210,6 @@ function findValueWithIcon(doc, labelText) {
                             }
                         }
                     }
-
                     return { text, hasValidIcon };
                 }
             }
@@ -218,8 +223,6 @@ function addTextToTweets() {
 
     userNames.forEach(async (userName) => {
         if (userName.getAttribute('data-processed-region-viewer')) return;
-
-        // Mark as processed immediately
         userName.setAttribute('data-processed-region-viewer', 'true');
 
         const username = getUsername(userName);
@@ -229,19 +232,17 @@ function addTextToTweets() {
         span.style.marginLeft = "5px";
         span.style.fontSize = "small";
         span.style.color = "#536471";
-        span.textContent = " ⏳"; // Short loading indicator
+        span.textContent = " ⏳";
 
         userName.appendChild(span);
 
         const data = await fetchUserRegionData(username);
 
         const basedInDisplay = formatWithFlag(data.basedIn);
-        const connectedViaDisplay = formatWithFlag(data.connectedVia);
+        const connectedViaDisplay = formatPlatform(data.connectedVia);
 
-        // Clear loading text
         span.textContent = "";
 
-        // Only show if we have data
         if (data.basedIn && data.basedIn !== "Unknown" && data.basedIn !== "Error") {
             const textNode = document.createTextNode(` | 📍 ${basedInDisplay}`);
             span.appendChild(textNode);
@@ -257,15 +258,13 @@ function addTextToTweets() {
         }
 
         if (span.innerHTML === "") {
-            span.textContent = " | ❓"; // No data found
+            span.textContent = " | ❓";
         }
     });
 }
 
-// Run initially
 addTextToTweets();
 
-// Observe the body for changes
 const observer = new MutationObserver((mutations) => {
     addTextToTweets();
 });
