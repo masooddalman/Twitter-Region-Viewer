@@ -17,6 +17,8 @@ A Chrome extension that reveals the "Account based in" and "Connected via" infor
 - **Region Detection**: Displays the country where the account is based (e.g., "United States 🇺🇸").
 - **Connection Info**: Shows the platform used to connect (e.g., "Android 🤖", "iPhone 🍎", "Web 🌐").
 - **Verification Status**: Displays a green circle 🟢 if the account has a specific verified status icon (excluding generic info icons).
+- **Hover Details**: Hover over the region info to see a detailed tooltip with the full text (e.g., "USERNAME account based in COUNTRY (With VPN) Connecting via PLATFORM").
+- **Data Refresh**: Includes a refresh button (🔄) to re-fetch and update the region data if it has changed.
 - **Rate Limit Protection**: Uses a "Click-to-Load" (🌍) mechanism to prevent Twitter from blocking your browser due to excessive requests.
 - **Caching**: Saves fetched data locally so you don't have to reload it for the same user twice.
 
