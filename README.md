@@ -22,6 +22,10 @@ A Chrome extension that reveals the "Account based in" and "Connected via" infor
 - **Rate Limit Protection**: Uses a "Click-to-Load" (🌍) mechanism to prevent Twitter from blocking your browser due to excessive requests.
 - **Caching**: Saves fetched data locally so you don't have to reload it for the same user twice.
 
+## ❗ Attention
+
+This extension **does not** reveal private information or provide any data that is not already publicly available on X (Twitter). It simply fetches and displays the "Account based in" and "Connected via" information that Twitter itself displays on the user's `/about` page (e.g. `x.com/username/about`).
+
 ## 🛠️ How It Works
 
 1. **Activation**: The extension runs on `twitter.com` and `x.com`.
