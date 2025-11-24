@@ -1,13 +1,31 @@
 const storageCache = {
     get: async (username) => {
         return new Promise((resolve) => {
-            chrome.storage.local.get([username], (result) => {
-                resolve(result[username]);
-            });
+            try {
+                chrome.storage.local.get([username], (result) => {
+                    if (chrome.runtime.lastError) {
+                        console.warn("[RegionViewer] Storage get error:", chrome.runtime.lastError);
+                        resolve(null);
+                        return;
+                    }
+                    resolve(result ? result[username] : null);
+                });
+            } catch (e) {
+                console.warn("[RegionViewer] Storage access failed (likely context invalidated):", e);
+                resolve(null);
+            }
         });
     },
     set: (username, data) => {
-        chrome.storage.local.set({ [username]: data });
+        try {
+            chrome.storage.local.set({ [username]: data }, () => {
+                if (chrome.runtime.lastError) {
+                    console.warn("[RegionViewer] Storage set error:", chrome.runtime.lastError);
+                }
+            });
+        } catch (e) {
+            console.warn("[RegionViewer] Storage set failed:", e);
+        }
     }
 };
 
