@@ -267,7 +267,7 @@ function addTextToTweets() {
             loadBtn.remove();
 
             // Render data
-            renderData(container, data);
+            renderData(container, data, username);
         };
 
         container.appendChild(loadBtn);
@@ -277,12 +277,12 @@ function addTextToTweets() {
         const cached = await storageCache.get(username);
         if (cached) {
             loadBtn.remove();
-            renderData(container, cached);
+            renderData(container, cached, username);
         }
     });
 }
 
-function renderData(container, data) {
+function renderData(container, data, username) {
     const basedInDisplay = formatWithFlag(data.basedIn);
     const connectedViaDisplay = formatPlatform(data.connectedVia);
 
@@ -302,6 +302,17 @@ function renderData(container, data) {
 
     if (container.innerHTML === "") {
         container.textContent = " | ❓";
+    } else {
+        // Construct tooltip text
+        // Format: USERNAME account based in COUNTRY_NAME {if there was a green emoi With VPN else empty} Connecting via COUNTRY_NAME CONNECTION TYPE
+        let tooltip = `${username} account based in ${data.basedIn}`;
+        if (data.basedInHasIcon) {
+            tooltip += " (With VPN)";
+        }
+        if (data.connectedVia && data.connectedVia !== "Unknown" && data.connectedVia !== "Error") {
+            tooltip += ` Connecting via ${data.connectedVia}`;
+        }
+        container.title = tooltip;
     }
 }
 
