@@ -283,8 +283,12 @@ function addTextToTweets() {
 }
 
 function renderData(container, data, username) {
+    container.innerHTML = ""; // Clear previous content
+
     const basedInDisplay = formatWithFlag(data.basedIn);
     const connectedViaDisplay = formatPlatform(data.connectedVia);
+
+    let hasData = false;
 
     if (data.basedIn && data.basedIn !== "Unknown" && data.basedIn !== "Error") {
         const textNode = document.createTextNode(` | 📍 ${basedInDisplay}`);
@@ -294,17 +298,20 @@ function renderData(container, data, username) {
             const iconNode = document.createTextNode(" 🟢");
             container.appendChild(iconNode);
         }
+        hasData = true;
     }
     if (data.connectedVia && data.connectedVia !== "Unknown" && data.connectedVia !== "Error") {
         const textNode = document.createTextNode(` | 🔗 ${connectedViaDisplay}`);
         container.appendChild(textNode);
+        hasData = true;
     }
 
-    if (container.innerHTML === "") {
-        container.textContent = " | ❓";
+    if (!hasData) {
+        const textNode = document.createTextNode(" | ❓");
+        container.appendChild(textNode);
+        container.title = "No region data found";
     } else {
         // Construct tooltip text
-        // Format: USERNAME account based in COUNTRY_NAME {if there was a green emoi With VPN else empty} Connecting via COUNTRY_NAME CONNECTION TYPE
         let tooltip = `${username} account based in ${data.basedIn}`;
         if (data.basedInHasIcon) {
             tooltip += " (With VPN)";
@@ -314,6 +321,31 @@ function renderData(container, data, username) {
         }
         container.title = tooltip;
     }
+
+    // Add Refresh Button
+    const refreshBtn = document.createElement('span');
+    refreshBtn.textContent = " 🔄";
+    refreshBtn.style.cursor = "pointer";
+    refreshBtn.style.opacity = "0.7";
+    refreshBtn.style.marginLeft = "4px";
+    refreshBtn.title = "Refresh data";
+    refreshBtn.onclick = async (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+
+        refreshBtn.textContent = " ⏳";
+        refreshBtn.style.cursor = "default";
+        refreshBtn.onclick = null; // Disable click while loading
+
+        // Force fresh fetch by adding to queue directly
+        const newData = await new Promise((resolve) => {
+            queue.push({ username, resolve });
+            processQueue();
+        });
+
+        renderData(container, newData, username);
+    };
+    container.appendChild(refreshBtn);
 }
 
 addTextToTweets();
