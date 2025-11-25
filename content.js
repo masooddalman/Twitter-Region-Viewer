@@ -332,11 +332,16 @@ function renderData(container, data, username) {
         // Construct tooltip text
         let tooltip = `${username} account based in ${data.basedIn}`;
         if (data.basedInHasIcon) {
-            tooltip += " (With VPN)";
+            tooltip += " (using VPN)";
         }
         if (data.connectedVia && data.connectedVia !== "Unknown" && data.connectedVia !== "Error") {
             tooltip += ` Connecting via ${data.connectedVia}`;
         }
+
+        if ((data.basedIn === "Iran" || data.basedIn === "West Asia") && !data.basedInHasIcon) {
+            tooltip += "\nProbably is using white Internet💩";
+        }
+
         container.title = tooltip;
     }
 
