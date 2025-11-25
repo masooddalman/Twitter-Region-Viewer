@@ -186,8 +186,8 @@ function extractFromIframe(username) {
             try {
                 const doc = iframe.contentDocument;
                 if (doc && doc.readyState === 'complete') {
-                    const basedInData = findValueWithIcon(doc, "Account based in");
-                    const connectedViaData = findValueWithIcon(doc, "Connected via");
+                    const basedInData = findValueWithIcon(doc, "Account based in", true);
+                    const connectedViaData = findValueWithIcon(doc, "Connected via", false);
 
                     if (basedInData.text || connectedViaData.text || attempts >= maxAttempts) {
                         clearInterval(interval);
@@ -213,7 +213,7 @@ function extractFromIframe(username) {
     });
 }
 
-function findValueWithIcon(doc, labelText) {
+function findValueWithIcon(doc, labelText, checkForIcon = false) {
     const spans = doc.querySelectorAll('span');
     for (const span of spans) {
         if (span.textContent.trim() === labelText) {
@@ -224,20 +224,22 @@ function findValueWithIcon(doc, labelText) {
                     const text = valueDiv.textContent.trim();
 
                     let hasValidIcon = false;
-                    const parent = labelDiv.parentElement;
-                    if (parent) {
-                        const grandparent = parent.parentElement;
-                        if (grandparent) {
-                            for (const child of grandparent.children) {
-                                if (child.tagName.toLowerCase() === 'svg' && child !== parent) {
-                                    const path = child.querySelector('path');
-                                    const d = path ? path.getAttribute('d') : "";
-                                    const ignoredPath = "M13.5 8.5c0 .83-.67 1.5-1.5 1.5s-1.5-.67-1.5-1.5S11.17 7 12 7s1.5.67 1.5 1.5zM13 17v-5h-2v5h2zm-1 5.25c5.66 0 10.25-4.59 10.25-10.25S17.66 1.75 12 1.75 1.75 6.34 1.75 12 6.34 22.25 12 22.25zM20.25 12c0 4.56-3.69 8.25-8.25 8.25S3.75 16.56 3.75 12 7.44 3.75 12 3.75s8.25 3.69 8.25 8.25z";
+                    if (checkForIcon) {
+                        const parent = labelDiv.parentElement;
+                        if (parent) {
+                            const grandparent = parent.parentElement;
+                            if (grandparent) {
+                                for (const child of grandparent.children) {
+                                    if (child.tagName.toLowerCase() === 'svg' && child !== parent) {
+                                        const path = child.querySelector('path');
+                                        const d = path ? path.getAttribute('d') : "";
+                                        const ignoredPath = "M13.5 8.5c0 .83-.67 1.5-1.5 1.5s-1.5-.67-1.5-1.5S11.17 7 12 7s1.5.67 1.5 1.5zM13 17v-5h-2v5h2zm-1 5.25c5.66 0 10.25-4.59 10.25-10.25S17.66 1.75 12 1.75 1.75 6.34 1.75 12 6.34 22.25 12 22.25zM20.25 12c0 4.56-3.69 8.25-8.25 8.25S3.75 16.56 3.75 12 7.44 3.75 12 3.75s8.25 3.69 8.25 8.25z";
 
-                                    if (d !== ignoredPath) {
-                                        hasValidIcon = true;
+                                        if (d !== ignoredPath) {
+                                            hasValidIcon = true;
+                                        }
+                                        break;
                                     }
-                                    break;
                                 }
                             }
                         }
@@ -300,6 +302,32 @@ function addTextToTweets() {
     });
 }
 
+function applyRedRingToProfileImage(container, username) {
+    // Navigate up to find the tweet article, then find the avatar container
+    const article = container.closest('article');
+    if (!article) return;
+
+    // Find the UserAvatar-Container by data-testid which includes the username
+    const avatarContainer = article.querySelector(`[data-testid="UserAvatar-Container-${username}"]`);
+    if (avatarContainer && !avatarContainer.getAttribute('data-red-ring-applied')) {
+        avatarContainer.setAttribute('data-red-ring-applied', 'true');
+        avatarContainer.style.boxShadow = "0 0 0 3px red";
+        avatarContainer.style.borderRadius = "50%";
+        avatarContainer.style.position = "relative";
+
+        // Add 💩 emoji at bottom left
+        const poopEmoji = document.createElement('span');
+        poopEmoji.textContent = "💩";
+        poopEmoji.style.position = "absolute";
+        poopEmoji.style.bottom = "-4px";
+        poopEmoji.style.left = "-4px";
+        poopEmoji.style.fontSize = "14px";
+        poopEmoji.style.zIndex = "10";
+        poopEmoji.style.pointerEvents = "none";
+        avatarContainer.appendChild(poopEmoji);
+    }
+}
+
 function renderData(container, data, username) {
     container.innerHTML = ""; // Clear previous content
 
@@ -307,6 +335,14 @@ function renderData(container, data, username) {
     const connectedViaDisplay = formatPlatform(data.connectedVia);
 
     let hasData = false;
+
+    // Check if user is from Iran/West Asia without VPN icon
+    const isIranOrWestAsiaNoVPN = (data.basedIn === "Iran" || data.basedIn === "West Asia") && !data.basedInHasIcon;
+
+    // Apply red ring to profile image if applicable
+    if (isIranOrWestAsiaNoVPN) {
+        applyRedRingToProfileImage(container, username);
+    }
 
     if (data.basedIn && data.basedIn !== "Unknown" && data.basedIn !== "Error") {
         const textNode = document.createTextNode(` | 📍 ${basedInDisplay}`);
@@ -339,7 +375,7 @@ function renderData(container, data, username) {
         }
 
         if ((data.basedIn === "Iran" || data.basedIn === "West Asia") && !data.basedInHasIcon) {
-            tooltip += "\nProbably is using white Internet💩";
+            tooltip += "\nProbably is using uncensored Internet💩";
         }
 
         container.title = tooltip;
