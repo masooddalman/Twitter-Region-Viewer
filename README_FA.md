@@ -35,6 +35,11 @@
 
 ## 📦 نصب
 
+**نصب از طریق فروشگاه وب کروم (Chrome Web Store):**
+[<img src="https://storage.googleapis.com/web-dev-uploads/image/WlD8wC6g8khYWPJUsQceQkhXSlv1/iQN5w5eXgJ2c8bQx7dJq.png" width="200" alt="Available in the Chrome Web Store" />](https://chromewebstore.google.com/detail/twitter-region-viewer/fglogdcfbpiegiaagchffclgnefnpkfh?authuser=0&hl=en)
+
+### نصب دستی (حالت توسعه‌دهنده)
+
 1. این مخزن را کلون کنید:
 
     ```bash

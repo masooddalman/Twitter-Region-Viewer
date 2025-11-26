@@ -37,6 +37,11 @@ This extension **does not** reveal private information or provide any data that 
 
 ## 📦 Installation
 
+**Install from Chrome Web Store:**
+[<img src="https://storage.googleapis.com/web-dev-uploads/image/WlD8wC6g8khYWPJUsQceQkhXSlv1/iQN5w5eXgJ2c8bQx7dJq.png" width="200" alt="Available in the Chrome Web Store" />](https://chromewebstore.google.com/detail/twitter-region-viewer/fglogdcfbpiegiaagchffclgnefnpkfh?authuser=0&hl=en)
+
+### Manual Installation (Developer Mode)
+
 1. Clone this repository:
 
     ```bash
