@@ -271,28 +271,8 @@ function addTextToTweets() {
         // Create the "Load" button
         const loadBtn = document.createElement('span');
         loadBtn.textContent = " 🌍";
-        loadBtn.style.cursor = "pointer";
-        loadBtn.style.opacity = "0.7";
-        loadBtn.style.transition = "all 0.2s ease-in-out";
-        loadBtn.style.transform = "scale(1)";
-        loadBtn.style.borderRadius = "4px";
-        loadBtn.style.padding = "2px";
+        loadBtn.className = "region-viewer-btn";
         loadBtn.title = "Click to load region info";
-
-        // Add hover effects
-        loadBtn.addEventListener('mouseover', function() {
-            this.style.opacity = "1";
-            this.style.transform = "scale(1.2)";
-            this.style.backgroundColor = "rgba(29, 161, 242, 0.1)";
-            this.style.boxShadow = "0 0 8px rgba(29, 161, 242, 0.3)";
-        });
-
-        loadBtn.addEventListener('mouseout', function() {
-            this.style.opacity = "0.7";
-            this.style.transform = "scale(1)";
-            this.style.backgroundColor = "transparent";
-            this.style.boxShadow = "none";
-        });
 
         loadBtn.onclick = async (e) => {
             e.stopPropagation(); // Prevent clicking the tweet
@@ -404,29 +384,8 @@ function renderData(container, data, username) {
     // Add Refresh Button
     const refreshBtn = document.createElement('span');
     refreshBtn.textContent = " 🔄";
-    refreshBtn.style.cursor = "pointer";
-    refreshBtn.style.opacity = "0.7";
-    refreshBtn.style.marginLeft = "4px";
-    refreshBtn.style.transition = "all 0.2s ease-in-out";
-    refreshBtn.style.transform = "scale(1)";
-    refreshBtn.style.borderRadius = "4px";
-    refreshBtn.style.padding = "2px";
+    refreshBtn.className = "region-viewer-btn";
     refreshBtn.title = "Refresh data";
-
-    // Add hover effects for refresh button
-    refreshBtn.addEventListener('mouseover', function() {
-        this.style.opacity = "1";
-        this.style.transform = "scale(1.2)";
-        this.style.backgroundColor = "rgba(29, 161, 242, 0.1)";
-        this.style.boxShadow = "0 0 8px rgba(29, 161, 242, 0.3)";
-    });
-
-    refreshBtn.addEventListener('mouseout', function() {
-        this.style.opacity = "0.7";
-        this.style.transform = "scale(1)";
-        this.style.backgroundColor = "transparent";
-        this.style.boxShadow = "none";
-    });
 
     refreshBtn.onclick = async (e) => {
         e.stopPropagation();
@@ -446,6 +405,37 @@ function renderData(container, data, username) {
     };
     container.appendChild(refreshBtn);
 }
+
+// Helper function to initialize button styles and hover effects
+function initButtonStyles() {
+    const style = document.createElement('style');
+    style.textContent = `
+        .region-viewer-btn {
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        .region-viewer-btn:hover {
+            opacity: 1;
+        }
+    `;
+    document.head.appendChild(style);
+
+    // Event delegation for all hover effects
+    document.addEventListener('mouseover', (e) => {
+        if (e.target.classList.contains('region-viewer-btn')) {
+            e.target.style.opacity = '1';
+        }
+    });
+
+    document.addEventListener('mouseout', (e) => {
+        if (e.target.classList.contains('region-viewer-btn')) {
+            e.target.style.opacity = '0.7';
+        }
+    });
+}
+
+initButtonStyles();
 
 addTextToTweets();
 
